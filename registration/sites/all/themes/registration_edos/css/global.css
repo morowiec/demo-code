@@ -1,0 +1,170 @@
+/* This file will hold styles for the mobile version of your website (mobile first). */
+/* This also can include ANY global CSS that applies site-wide. Unless overwritten by a more specific style rule, CSS declarations in global.css will apply site-wide. */
+
+
+body {
+    background-color: #555658;
+    font:15px Arial, Helvetica, sans-serif;
+    color:#cccccc;	
+}
+
+
+h1,h2,h3,h4 {
+    font-family:Verdana, Geneva, sans-serif;
+}
+
+td{
+    padding:8px;
+}
+
+.blackborder td{
+    border: 1px solid #000;
+    border-collapse: collapse;
+}
+
+#page {
+    color: #555658;	
+    padding: 10px 0 10px 0;
+}
+
+#zone-branding-wrapper {
+}
+
+#zone-branding {
+    position:relative;
+}
+
+
+#zone-branding .logo-img {
+    margin: 0 20px 0 15px;
+}
+
+
+#zone-branding #region-branding {
+    margin: 0;
+    width: 100%;
+    height: 229px;
+    overflow:hidden;
+}
+.page-user #zone-branding #region-branding,
+.page-registration-confirm #zone-branding #region-branding {
+    height: 30px;
+}
+
+#breadcrumb {
+    display: none;
+}
+
+#zone-content {
+    margin-top: 0;
+    background-image:none;
+    background-color:#FFF;
+    position:relative;
+}
+
+
+
+#zone-footer {
+    background-color:#FFFFFF;
+    border-top: 3px solid #d9d9d9;
+    height:250px;
+    overflow:hidden;
+    background:#FFFFFF url("../images/projects-footer-bg.png") repeat-x left top;
+}
+
+#region-footer-first {
+    background-color: none;
+    padding: 0;
+    font-weight:bold;
+    color:#555658;
+    background: url("../images/book-tea.jpg") no-repeat left top;
+    height:250px;
+}
+
+#region-footer-first a {
+    color:#555658;
+}
+#region-footer-first .block-block-5 {
+    margin-top:20px;
+}
+
+
+#region-footer-first .region-inner {
+    padding-left: 645px;
+    padding-top: 20px;
+}
+
+
+.blue_txt {
+    color: #00689d;
+    font-weight:bold;
+}
+
+.red_txt {
+    color: #e2001a;
+    font-weight:bold;
+}
+.blue_txt_normal {
+    color: #00689d;
+    font-weight: normal;
+}
+
+.red_txt_normal {
+    color: #e2001a;
+    font-weight: normal;
+}
+.red_txt a,
+a.red_txt{
+    color: #e2001a !important;
+}
+
+.red {
+    color: #ff0000;
+}
+
+.htmlmail-simplenews-body{
+    text-align: center;
+}
+
+.node-type-simplenews #breadcrumb{
+    display: none;    
+}
+
+.node-type-simplenews h1.title{
+    display: none;
+}
+
+.node-type-simplenews article{
+    border: 1px solid #0070c0;
+    width: 800px;
+    margin: 20px auto;
+    padding: 10px 0;
+} 
+
+.node-type-simplenews article .field-name-body {
+    margin: 20px 0;    
+}
+.node-type-simplenews article .field-name-body p{
+    margin: 13px;
+}
+
+.node-type-simplenews .block-powered-by .content{
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.page-conferences-young-learners-heart-registration #zone-branding #region-branding {
+    background: url("../../../../default/files/headers/6/header.png") no-repeat left top;
+}
+.page-conferences-on-line-ona-off-line #zone-branding #region-branding {
+    background: url("../../../../default/files/headers/11/header.png") no-repeat left top;
+}
+
+#participants .fieldset-legend{
+    font-weight: bold;
+    font-size: 1.1em;    
+}
+
+#participants .participant{
+    padding: 15px 0 10px 20px;
+}

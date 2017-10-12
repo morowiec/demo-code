@@ -1,0 +1,114 @@
+<?php
+
+/**
+ * @file
+ * Install the feature clientx_offers.
+ */
+
+require 'clientx_offers.install.inc';
+
+/**
+ * Implements hook_install().
+ */
+function clientx_offers_install() {
+  // Disable homepage context.
+  $contexts = variable_get('context_status', array());
+  $contexts['homepage'] = TRUE;
+  variable_set('context_status', $contexts);
+
+  features_revert(array('clientx_offers' => array('taxonomy')));
+
+  // Create and populate "clientx | Offers | Company Type" vocabulary.
+  // clientx | Offers | Company Type terms.
+  $company_type = array(
+    array('en' => 'Agencies'),
+    array('en' => 'Companys and bodies'),
+    array('en' => 'Technical'),
+  );
+  _clientx_offers_populate_vocab('clientx_offers_company_type', $company_type);
+
+  // Assign permisstions to roles.
+  multisite_config_service('user')->grantPermission('clientx | Content manager', 'create clientx_companys_and_agencies content', 'node');
+  multisite_config_service('user')->grantPermission('clientx | Content manager', 'edit own clientx_companys_and_agencies content', 'node');
+  multisite_config_service('user')->grantPermission('clientx | Content manager', 'edit any clientx_companys_and_agencies content', 'node');
+  multisite_config_service('user')->grantPermission('clientx | Content manager', 'delete own clientx_companys_and_agencies content', 'node');
+  multisite_config_service('user')->grantPermission('clientx | Content manager', 'delete any clientx_companys_and_agencies content', 'node');
+  multisite_config_service('user')->grantPermission('clientx | Content manager', 'create clientx_offers content', 'node');
+  multisite_config_service('user')->grantPermission('clientx | Content manager', 'edit own clientx_offers content', 'node');
+  multisite_config_service('user')->grantPermission('clientx | Content manager', 'edit any clientx_offers content', 'node');
+  multisite_config_service('user')->grantPermission('clientx | Content manager', 'delete own clientx_offers content', 'node');
+  multisite_config_service('user')->grantPermission('clientx | Content manager', 'delete any clientx_offers content', 'node');
+  multisite_config_service('user')->grantPermission('clientx | Content manager', 'administer taxonomy');
+
+  variable_set('clientx_deadline_switch_period', 86400);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function clientx_offers_uninstall() {
+  // Enable homepage context.
+  $contexts = variable_get('context_status', array());
+  unset($contexts['homepage']);
+  variable_set('context_status', $contexts);
+
+  // Remove menu.
+  if ($menu = menu_load('menu-clientx-some')) {
+    menu_delete($menu);
+  }
+}
+
+/**
+ * Implements hook_enable().
+ */
+function clientx_offers_enable() {
+  // Set enable message.
+  drupal_set_message(t('The module clientx | Temporarys is now active on your site.'));
+}
+
+/**
+ * Implements hook_disable().
+ */
+function clientx_offers_disable() {
+  // Set disable message.
+  drupal_set_message(t('The module clientx | Temporarys has been disabled on your site! Please contact FPFIS support to reactivate it.'));
+}
+
+/**
+ * Rename table and set clientx_deadline_switch_period.
+ */
+function clientx_offers_update_7100() {
+  variable_set('clientx_deadline_switch_period', 86400);
+
+  // Fix search_index table name bug.
+  db_rename_table('search_api_db_clientx_aaa_search_index_field_clientx_locations_paren',
+      'search_api_db_clientx_aaa_search_index_field_clientx_locations_parent');
+}
+
+/**
+ * Populate "clientx | Offers | Company Type" terms.
+ */
+function clientx_offers_update_7101() {
+  $company_type = array(
+    array('en' => 'Agencies'),
+    array('en' => 'Companys and bodies'),
+    array('en' => 'Technical'),
+  );
+  _clientx_offers_populate_vocab('clientx_offers_company_type', $company_type);
+}
+
+/**
+ * Set clientx_node_is_new_period value.
+ */
+function clientx_offers_update_7102() {
+  variable_set('clientx_node_is_new_period', 2678400);
+}
+
+/**
+ * Remove obsolete fields.
+ */
+function clientx_offers_update_7103() {
+  field_delete_field('field_clientx_date_cbmctbp_confirme');
+  field_delete_field('field_clientx_date_cbmct_confirmed');
+  field_purge_batch(1);
+}

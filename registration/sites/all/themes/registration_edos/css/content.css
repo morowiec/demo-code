@@ -1,0 +1,26 @@
+@charset "utf-8";
+/* CSS Document */
+
+body {
+    font-family:Verdana, Geneva, sans-serif;
+    color:#444444;
+    font-size:13px;
+}
+body#tinymce{
+    width: 800px;    
+}
+
+.interline_100 {
+ line-height: 100%;
+}
+
+.interline_150 {
+ line-height: 150%;
+}
+.interline_200 {
+ line-height: 200%;
+}
+
+.interline_250 {
+ line-height: 250%;
+}

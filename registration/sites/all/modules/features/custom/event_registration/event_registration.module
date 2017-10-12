@@ -1,0 +1,370 @@
+<?php
+
+/**
+ * @file
+ * Code for the Event Registration feature.
+ */
+include_once 'event_registration.features.inc';
+include_once 'event_registration.forms.inc';
+include_once 'event_registration.forms.validators.inc';
+
+module_load_include('php', 'event_registration', 'includes/NumberInWords');
+
+// Setting up templates directory path.
+define('EDOS_CORE_PLUGINS_TEMPLATES_PATH', drupal_get_path('module', 'event_registration') . '/plugins/templates');
+
+
+/**
+ * Implementation of hook_ctools_plugin_directory().
+ */
+function event_registration_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'ctools') {
+    return 'plugins/' . $plugin;
+  }
+}
+
+/**
+ * Implements hook_form_views_exposed_form_alter().
+ */
+function event_registration_form_views_exposed_form_alter(&$form, &$form_state) {
+  global $language;
+  switch ($form['#id']) {
+    case 'views-exposed-form-registration-page':
+      $form['commerce_product_product_id'] = array(
+        '#type' => 'select',
+        '#size' => NULL,
+        '#default_value' => '',
+        '#options' => _event_registration_get_items_from_view('edos_conference_events'),
+      );
+      break;
+
+  }
+}
+/**
+ * Implements hook_menu().
+ */
+function event_registration_menu() {
+  $items = array();
+  // If the Order UI module is installed, add a local action to it that lets an
+  // administrator execute a cart order refresh on the order. Modules that
+  // define their own order edit menu item are also responsible for defining
+  // their own local action menu items if needed.
+  if (module_exists('commerce_order_ui')) {
+    $items['admin/commerce/orders/%commerce_order/add_participant'] = array(
+        'title' => 'Add participant',
+        'description' => 'Add participant to order',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('event_registration_add_participant_form', 3),
+        'access callback' => 'commerce_order_access',
+        'access arguments' => array(3),
+        'weight' => -7,
+        'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+        'type' => MENU_LOCAL_TASK,
+    );
+  }
+  return $items;
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function event_registration_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add an action link to the order edit page from the user order page.
+  if ($root_path == 'admin/commerce/orders/%') {
+    // Extract the order ID from the current router item and fetch the admin
+    // update menu item.
+    $order_id = $router_item['original_map'][3];
+    dpm($order_id);
+    $item = menu_get_item('admin/commerce/orders/' . $order_id . '/add_participant');
+
+    if ($item['access']) {
+      // Override the title.
+      $item['title'] = t('Add participant');
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+/**
+ * Form callback: Add participant to order.
+ *
+ * @param $order
+ *   The order object to apply the card refresh to.
+ *
+ * @return
+ *   The form array to confirm the refresh.
+ *
+ * @see confirm_form()
+ */
+function event_registration_add_participant_form($form, &$form_state, $order) {
+    $form['order_id'] = array(
+        '#type' => 'value',
+        '#value' => $order->order_id,
+    );
+    
+    $line_items = array();
+    foreach ($order->commerce_line_items[LANGUAGE_NONE] as $line_item_id) {
+        $line_item = commerce_line_item_load($line_item_id['line_item_id']);
+        if ($line_item->type == 'product') {
+            $line_items[$line_item->line_item_id] = $line_item->line_item_label;
+        }
+    }
+    $line_items_keys = array_keys($line_items);
+
+    $form['lastname'] = array(
+        '#title' => t('Last name'),
+        '#type' => 'textfield',
+        '#required' => TRUE,
+    );
+    $form['firstname'] = array(
+        '#title' => t('First name'),
+        '#type' => 'textfield',
+        '#required' => TRUE,
+    );
+    $form['email'] = array(
+        '#title' => t('Email'),
+        '#type' => 'textfield',
+        '#required' => TRUE,
+    );
+    $form['line_item'] = array(
+        '#title' => t('Line item'),
+        '#type' => 'select',
+        '#options' => $line_items,
+        '#required' => TRUE,
+        '#default_value' => $line_items_keys[0],
+    );
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Add'),
+    );
+    return $form;
+}
+/**
+ * Add a submit handler/function to the form.
+ *
+ * This will add a completion message to the screen when the
+ * form successfully processes
+ */
+function event_registration_add_participant_form_submit($form, &$form_state) {
+    global $user;
+    $values = $form_state['values'];
+    $order = commerce_order_load($values['order_id']);
+    $line_item = commerce_line_item_load($values['line_item']);
+
+    $product = commerce_product_load($line_item->commerce_product[LANGUAGE_NONE][0]['product_id']);
+    $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
+    $bundle = registration_get_entity_registration_type('commerce_product', $product_wrapper->value());
+
+    if (!function_exists('commerce_registration_create_product_registration')) {
+        module_load_include('inc', 'commerce_registration', 'includes/commerce_registration.checkout_pane');
+        $registration = commerce_registration_create_product_registration($product->product_id, $bundle, $order->order_id);
+        $registration->user_uid = $order->uid;
+        $registration->field_registration_lastname[LANGUAGE_NONE][0]['value'] = $values['lastname'];
+        $registration->field_registration_firstname[LANGUAGE_NONE][0]['value'] = $values['firstname'];
+        $registration->anon_mail = $values['email'];
+	registration_save($registration);
+
+	$prodkey = $line_item->line_item_id . 'prod-' . $product_wrapper->sku->value();
+	$order->data['register_entities'][$prodkey][] = $registration;
+	$qty = $line_item->quantity + 1;
+        $line_item->quantity = $qty;
+        $line_item->commerce_total[LANGUAGE_NONE][0]['amount'] = $qty * $line_item->commerce_unit_price[LANGUAGE_NONE][0]['amount'];
+        $line_item->commerce_total[LANGUAGE_NONE][0]['data']['components']['0']['price']['amount'] = $qty * $line_item->commerce_unit_price[LANGUAGE_NONE][0]['amount'];
+        $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+        commerce_line_item_rebase_unit_price($line_item_wrapper->value());
+        commerce_line_item_save($line_item_wrapper->value());
+        commerce_cart_order_refresh($order);
+
+        // Save the line item to get its ID.
+        commerce_line_item_save($line_item);
+        commerce_order_save($order);
+	ddl(array($registration,$order,$line_item));
+        
+    }    
+}
+
+/**
+ * Implement hook_rules_action_info().
+ */
+function event_registration_rules_action_info() {
+  return array(
+    'event_registration_rules_action_payment_notify' => array(
+      'label' => t('Payment notify'),
+      'group' => t('Custom'),
+    ),
+    'event_registration_rules_action_payment_confirm' => array(
+      'label' => t('Payment confirm'),
+      'parameter' => array(
+        'commerce_order' => array(
+          'type' => 'commerce_order',
+          'label' => t('Order to update'),
+        ),
+      ),
+      'group' => t('Custom'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_mail().
+ */
+function event_registration_mail($subject, $body, $to) {
+  $from = variable_get('system_mail');
+
+  // Set the mail content type to html to send an html e-mail (optional).
+  $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
+  $message['headers']['From'] = $from;
+  $message['headers']['Sender'] = $from;
+  $message['headers']['Return-Path'] = $from;
+  $message['id'] = 'event_registration';
+  $message['from'] = $from;
+  $message['subject'] = $subject;
+  $message['body'] = $body;
+  $message['to'] = $to;
+  $message['headers']['bcc'] = 'admin@e-dos.org';
+
+  $system = drupal_mail_system('event_registration', 'confirm');
+  $system->mail($message);
+}
+
+// This callback creates the hashed string by using the parameters provided through rules' UI
+function event_registration_rules_action_payment_notify() {
+  $created = strtotime('-5 day');
+  $query = new EntityFieldQuery();
+  $query
+    ->entityCondition('entity_type', 'commerce_order')
+    ->propertyCondition('status', 'pending', '=')
+    ->propertyCondition('created', $created, '<');
+
+  $results = $query->execute();
+  
+  if (!empty($results['commerce_order'])) {
+    foreach ($results['commerce_order'] as $result) {
+      $order = commerce_order_load($result->order_id);
+      if(isset($order->commerce_line_items[LANGUAGE_NONE][0]['line_item_id'])){
+        event_registration_mail('[e-dos registration] Payment reminder', _event_registration_payment_notification_mail_body($order), $order->mail);
+      } else {
+        ddl(array('wrong', $order));
+      }
+    }
+  }
+}
+// This callback creates the hashed string by using the parameters provided through rules' UI
+function event_registration_rules_action_payment_confirm($order) {
+  if ($order->status) {
+    event_registration_mail('[e-dos registration] Payment confirmation', _event_registration_payment_confirm_mail_body($order), $order->mail);
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function event_registration_theme($existing, $type, $theme, $path) {
+  return array(
+    'edos_invoice' => array(
+      'variables' => array(
+        'data' => NULL,
+      ),
+      'template' => 'edos-invoice',
+      'path' => EDOS_CORE_PLUGINS_TEMPLATES_PATH,
+    ),
+  );
+}
+
+
+/**
+ * Confirmation email buid.
+ */
+function _event_registration_confirmation_mail_body($order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $conference = $order_wrapper->field_conference->value();
+  $conference_wrapper = entity_metadata_wrapper('node', $conference);
+  $line_item = commerce_line_item_load($order->commerce_line_items[LANGUAGE_NONE][0]['line_item_id']);
+  $total = $order_wrapper->commerce_order_total->value();
+  $total_value = commerce_currency_format($total['amount'], $total['currency_code']);
+  $link = url('user', array('absolute' => TRUE, 'https' => TRUE));
+
+  $product = commerce_product_load($line_item->commerce_product[LANGUAGE_NONE][0]['product_id']);
+
+  $message = '<p>Dziękujemy za dokonanie rejestracji na warsztaty <strong>' . $product->title . '</strong>.<br />Thank you for your registration for the <strong>' . $product->title . '</strong> workshops.</p>';
+  $message .= '<p>Opłatę w wysokości <strong>' . $total_value . '</strong> należy wpłacić na nasze konto:<br />Please rush your payment of <strong>' . $total_value . '</strong> to the following bank account:</p>';
+  $message .= $conference_wrapper->field_bank_account->value->value();
+  $message .= '<p>Tytułem: opłata za szkolenie.<br /><strong>Prosimy koniecznie dopisać: imię i nazwisko uczestnika + "uczestnik stacjonarny" LUB "uczestnik on-line"</strong></p>';
+  $message .= '<p>Description: registration fee.<br /><strong>Please make sure you have included participant(s)\' name + "face-to-face participant" OR "on-line participant"</strong></p>';
+  $message .= '<p>O zaksięgowaniu wpłaty na naszym koncie zostaniesz poinformowany e-mailem.<br />We shall notify you via email as soon as we have received your payment.</p>';
+
+  if($order_wrapper->field_invoice->value()){
+    $billing = $order_wrapper->commerce_customer_billing->value();
+    $message .= '<p>Podane dane do faktury (prosimy o sprawdzenie i eventualną korektę):</p>';
+    
+    $message .= '<p></p>';
+    $message .= 'Nazwa firmy / Company name: <strong>'.$billing->commerce_customer_address[LANGUAGE_NONE][0]['name_line'].'</strong><br />';
+    $message .= 'Ulica i nr domu / Street & house number: <strong>'.$billing->commerce_customer_address[LANGUAGE_NONE][0]['thoroughfare'].'</strong><br />';
+    $message .= 'Miejscowość / Town: <strong>'.$billing->commerce_customer_address[LANGUAGE_NONE][0]['locality'].'</strong><br />';
+    $message .= 'Kod pocztowy / Zip code: <strong>'.$billing->commerce_customer_address[LANGUAGE_NONE][0]['postal_code'].'</strong><br />';
+    $message .= 'NIP / Tax registration number: <strong>'.$billing->field_tax_number[LANGUAGE_NONE][0]['value'].'</strong><br />';
+  }
+  $message .= '<p>Zgodnie z "Regulaminem rejestracji", który Pani/Pan zaakceptował(a), w przypadku rezygnacji z udziału konferencji konieczne jest powiadomienie nas drogą e-mailową najpóźniej 3 dni robocze przed datą konferencji. W przeciwnym wypadku zostanie naliczona opłata manipulacyjna w wysokości 50% opłaty za konferencję.</p>';
+  $message .= '<p>Please note that in accordance with the ‘Terms and conditions’ of our registration, which you have accepted, it is essential that – in the event of your resignation to attend the conference – we are notified via e-mail no later than 3 working days before the conference. Otherwise you shall be invoiced with a handling charge of 50% of the conference fee.</p>';
+  $message .= '<p>Status swojej rejestracji możesz sprawdzić po zalogowaniu sie do naszego systemu. W tym celu wpisz w przeglądarce adres: <a href="' . $link . '">' . $link . '</a>. Pani/Pana login to adres e-mail, który został podany przy rejestracji się na nasze warsztaty.<br />You can check your registration status by logging in to our system at <a href="' . $link . '">' . $link . '</a>. Your login is your e-mail address, which you entered when registering for our sessions.</p>    ';
+
+  return $message;
+}
+
+/**
+ * Confirmation email buid.
+ */
+function _event_registration_payment_notification_mail_body($order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $line_item = commerce_line_item_load($order->commerce_line_items[LANGUAGE_NONE][0]['line_item_id']);
+  $total = $order_wrapper->commerce_order_total->value();
+  $total_value = commerce_currency_format($total['amount'], $total['currency_code']);
+
+  $product = commerce_product_load($line_item->commerce_product[LANGUAGE_NONE][0]['product_id']);  
+  $message = '<h1>Payment reminder</h1>';
+  $message .= '<p>Niestety nie odnotowaliśmy wpłaty za konferencję ' . $product->title . ' prosimy o szybkie uregulowanie należności wysokości ' . $total_value . ' PLN i bezzwłoczny kontakt mailowy z adresem  <a href="mailto:biuro@e-dos.org">biuro@e-dos.org</a> celem uniknięcia usunięcia z systemu!</p>';
+  $message .= '<p>We regret to inform you that  we have not received your payment for ' . $product->title . ' conference to avoid cancelling your registration, we recommend that you rush your payment of ' . $total_value . ' immediately and contact us by e-mail on  <a href="mailto:biuro@e-dos.org">biuro@e-dos.org</a> as soon as possibile! </p>';
+  return $message;  
+}
+
+/**
+ * Confirmation email buid.
+ */
+function _event_registration_payment_confirm_mail_body($order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $line_item = commerce_line_item_load($order->commerce_line_items[LANGUAGE_NONE][0]['line_item_id']);
+
+  $product = commerce_product_load($line_item->commerce_product[LANGUAGE_NONE][0]['product_id']);  
+  $message = '<h1>Payment confirmation</h1>';
+  $message .= '<p>Potwierdzamy otrzymanie opłaty rejestracyjnej na konferencję ' . $product->title . '. Serdecznie dziękujemy i do zobaczenia już wkrótce!</p>';
+  $message .= '<p>We confirm your payment of the registration fee ' . $product->title . ' conference. Thank you very much – and see you soon!</p>';
+  $message .= '<p>Jeżeli wykupiłeś udział poprzez transmisję on-line, Twój unikalny kod dostępu i hasło otrzymasz najpóźniej na 3 dni przed konferencją, tj. do dnia 19.10.2017.<br />Kod zostanie przesłany na adres e-mail podany podczas rejestracji.<br />Jeżeli nie otrzymasz swojego kodu dostępu i hasła w tym terminie, prosimy o pilny kontakt z organizatorami na e-mail: <a href="mailto:biuro@e-dos.org" target="_blank">biuro@e-dos.org</a> lub telefonicznie pod numerem <a href="tel:601%20800%20991" value="+48601800991" target="_blank">601 800 991</a>.</p>';
+  $message .= '<p> If you are an on-line participant, your unique access code and password will be sent directly to your e-mail address no later than 3 days in advance of the conference, i.e. by Oct 19th. <br />Should your access code and password not reach you successfully by then, please get in touch with us immediately at <a href="mailto:biuro@e-dos.org" target="_blank">biuro@e-dos.org</a> or ring our registration hotline on <a href="tel:601%20800%20991" value="+48601800991" target="_blank">601 800 991</a>. </p>';
+  return $message;  
+}
+
+/**
+ * Getting values array from view.
+ *
+ * @return array
+ *   list of values
+ */
+function _event_registration_get_items_from_view($name) {
+  global $language;
+  $options = array('' => t('- All -'));
+  $view = views_get_view($name);
+  $view->set_display('search_filter');
+  $view->execute();
+  $results = $view->result;
+
+  switch ($name) {
+    case 'edos_conference_events':
+      foreach ($results as $result) {
+        $options[$result->product_id] = $result->commerce_product_title;
+      }
+      break;
+  }
+  return $options;    
+}

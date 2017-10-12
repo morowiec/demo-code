@@ -1,0 +1,382 @@
+<?php
+
+/**
+ * @file
+ * Code for the clientx | Offers feature.
+ */
+
+include_once 'clientx_offers.features.inc';
+
+// Loading clientx | Offers constant properties.
+module_load_include('php', 'clientx_offers', 'class/clientxSomeOffers');
+
+// Loading helper class.
+module_load_include('php', 'clientx_offers', 'class/clientxSomeOffersTools');
+
+module_load_include('inc', 'clientx_offers', 'clientx_offers.blocks');
+
+// Setting up templates directory path.
+define('clientx_OFFERS_MODULE_TEMPLATES_PATH', drupal_get_path('module', 'clientx_offers') . '/templates');
+
+// Forms logic and overwriting functions.
+module_load_include('inc', 'clientx_offers', 'clientx_offers.theme');
+
+/**
+ * Implements hook_feature_set_api().
+ */
+function clientx_offers_feature_set_api() {
+  return array('version' => '2.0');
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function clientx_offers_form_clientx_offers_node_form_alter(&$form, &$form_state, $form_id) {
+  // Hide Companys / agencies field.
+  $form[clientxSomeOffers::COMPANYS_AGENCIES_FIELD]['#access'] = FALSE;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function clientx_offers_form_clientx_some_page_node_form_alter(&$form, &$form_state, $form_id) {
+  $node = $form_state['node'];
+
+  // On node create.
+  if (!isset($node->nid) || isset($node->is_new)) {
+    // Hide automatic title field on create form.
+    $form[clientxSomeOffers::SOME_PAGE_TITLE]['#access'] = FALSE;
+  }
+
+  // Hide Companys / agencies field.
+  $form[clientxSomeOffers::COMPANYS_AGENCIES_FIELD]['#access'] = FALSE;
+
+  if (isset($form[clientxSomeOffers::SOME_BUTTONS_FIELD])) {
+    $weight = $form[clientxSomeOffers::SOME_BUTTONS_FIELD]['#weight'] + 1;
+    $form[clientxSomeOffers::SOME_BUTTONS_UPDATE_FIELD] = array(
+      '#type' => 'checkbox',
+      '#title' => 'Force update',
+      '#description' => t('Force update Some buttons value to all languages'),
+      '#weight' => $weight,
+    );
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function clientx_offers_form_clientx_comp_news_node_form_alter(&$form, $form_state, $form_id) {
+  // Add function to transfer taxonomy term name form field
+  // field_clientx_comp_news_titl to title.
+  $form['#submit'][] = '_clientx_offers_comp_news_set_title_from_taxonomy';
+}
+
+/**
+ * Implements hook_node_presave().
+ */
+function clientx_offers_node_presave($node) {
+  switch ($node->type) {
+    case clientxSomeOffers::OFFER_CT:
+      // Save correct company on Some offer.
+      $company = clientxSomeOffersTools::getCompanyNodeFromId(clientxSomeOffersTools::getCompanyIdFromObject($node), $node->language);
+      if ($company) {
+        $node->field_clientx_companys_agencies[LANGUAGE_NONE][0]['target_id'] = $company->nid;
+      }
+
+      // Set automatic title.
+      if (!$node->is_new) {
+        $node = clientxSomeOffersTools::setAutomaticTitle($node, clientxSomeOffers::TEMPORARY_TITLE);
+      }
+      break;
+
+    case clientxSomeOffers::SOME_PAGE_CT:
+      // Save correct company on Some page.
+      $node = clientxSomeOffersTools::setCompanysNodeFromIds($node);
+      // Set automatic title.
+      if (!$node->is_new) {
+        $node = clientxSomeOffersTools::setAutomaticTitle($node, clientxSomeOffers::SOME_PAGE_TITLE);
+      }
+      // Force sync some buttons in all 24 languages.
+      if (property_exists($node, 'field_clientx_some_buttons_update') && $node->field_clientx_some_buttons_update == 1) {
+        $node = _clientx_offers_force_sync_some_buttons($node);
+      }
+      break;
+
+    case clientxSomeOffers::COMP_CT:
+      // Set automatic title.
+      if (!$node->is_new) {
+        $node = clientxSomeOffersTools::setAutomaticTitle($node, clientxSomeOffers::COMP_TITLE);
+      }
+
+      // Add token to standard message field if it's only one in
+      // Standard text field.
+      $has_std_text = isset($node->field_clientx_standard_text[LANGUAGE_NONE][0]['target_id']);
+      $has_std_message = isset($node->field_clientx_standard_message[LANGUAGE_NONE][0]['value']);
+      if ($has_std_text && !$has_std_message) {
+        $node = _clientx_offers_comp_news_add_token_to_stdmsg($node);
+      }
+      break;
+  }
+}
+
+/**
+ * Implements hook_views_api_alter().
+ */
+function clientx_offers_views_api_alter(&$vars) {
+  if (isset($vars['clientx_offers'])) {
+    $vars['clientx_offers']['path'] = drupal_get_path('module', 'clientx_offers');
+  }
+}
+
+/**
+ * Implements hook_form_views_exposed_form_alter().
+ */
+function clientx_offers_form_views_exposed_form_alter(&$form, &$form_state) {
+  global $language;
+  switch ($form['#id']) {
+    case 'views-exposed-form-clientx-offers-et-search-advanced':
+      if (!drupal_is_front_page()) {
+        $override = array_search("views_exposed_form_clientx_offers_et_search_advanced", $form['#theme']);
+        if ($override !== FALSE) {
+          unset($form['#theme'][$override]);
+        }
+      }
+
+      $form['keyword']['#attributes'] = [
+        'placeholder' => t('Quick aaa search ...'),
+      ];
+
+      $form['company'] = array(
+        '#type' => 'select',
+        '#size' => NULL,
+        '#default_value' => 'All',
+        '#options' => _clientx_offers_get_items_from_view('clientx_offers_company_id'),
+      );
+      $form['location'] = array(
+        '#type' => 'select',
+        '#size' => NULL,
+        '#default_value' => 'All',
+        '#options' => _clientx_offers_get_items_from_view('clientx_locations_with_country'),
+      );
+
+      // I18n labels in exposed filters.
+      foreach ($form['contract']['#options'] as $key => $option) {
+        if (is_numeric($key)) {
+          $term = taxonomy_term_load($key);
+          $form['contract']['#options'][$key] = i18n_taxonomy_term_name($term, $language->language);
+        }
+      }
+      $form['contract']['#options']['All'] = t('- All -');
+      $form['grade']['#options']['All'] = t('- All -');
+      break;
+
+  }
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function clientx_offers_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  global $user;
+  $user = user_load($user->uid);
+
+  if (clientxSomeOffersTools::checkIfUserIsSomeOfferEditor($user)&& isset($data['tabs'][0]['output'])) {
+    // Hide tabs for Intitution/Agency user.
+    $data['tabs'][0]['output'] = array();
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function clientx_offers_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'ctools') {
+    return 'plugins/' . $plugin;
+  }
+}
+
+/**
+ * Getting values array from view.
+ *
+ * @return array
+ *   list of values
+ */
+function _clientx_offers_get_items_from_view($name) {
+  global $language;
+  $options = array('All' => t('- All -'));
+  $view = views_get_view($name);
+  $view->set_display('search_filter');
+  $view->execute();
+  $results = $view->result;
+
+  switch ($name) {
+    case 'clientx_offers_company_id':
+      foreach ($results as $result) {
+        if (isset($result->field_title_field_et[0]['raw']['value'])) {
+          $options[$result->tid] = $result->field_title_field_et[0]['raw']['value'];
+        }
+        else {
+          $options[$result->tid] = $result->taxonomy_term_data_name;
+        }
+      }
+      break;
+
+    case 'clientx_locations_with_country':
+      foreach ($results as $result) {
+        $term = taxonomy_term_load($result->tid);
+        $options[$result->tid] = i18n_taxonomy_term_name($term, $language->language);
+      }
+      break;
+  }
+  return $options;
+}
+
+/**
+ * Implements hook_panels_pane_content_alter().
+ */
+function clientx_offers_panels_pane_content_alter($content, $pane, $args, $context) {
+  if ($pane->type == 'clientx_some_page_bean_tokens' && $content) {
+    switch ($pane->configuration['field']) {
+      case 'field_clientx_bean_some_instructio':
+        $content->title = t('Application');
+        break;
+
+      case 'field_clientx_sel_procedure_descrip':
+        $content->title = t('Selection procedure');
+        break;
+    }
+  }
+  return $content;
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function clientx_offers_field_formatter_info() {
+  return [
+    'clientx_diagram' => [
+      'label' => t('clientx Diagram'),
+      'description' => t('Display diagram.'),
+      'field types' => ['image'],
+      'settings' => [
+        'url_prefix' => FALSE,
+        'url_suffix' => FALSE,
+      ],
+    ],
+  ];
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function clientx_offers_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  switch ($display['type']) {
+
+    case 'clientx_entity_id':
+      $element['url_prefix'] = [
+        '#title' => t('URL prefix for referenced entity (before Entity ID)'),
+        '#type' => 'textfield',
+        '#default_value' => $settings['url_prefix'],
+      ];
+      $element['url_suffix'] = [
+        '#title' => t('URL suffix for referenced entity (after Entity ID)'),
+        '#type' => 'textfield',
+        '#default_value' => $settings['url_suffix'],
+      ];
+      break;
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function clientx_offers_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $summary = [];
+
+  switch ($display['type']) {
+
+    case 'clientx_entity_id':
+      $summary[] = t('URL to the referenced entity');
+      break;
+  }
+
+  return implode('<br />', $summary);
+}
+
+/**
+ * Helper function.
+ *
+ * Change node title based on taxonomy temrm from in
+ * field_clientx_comp_news_titl.
+ */
+function _clientx_offers_comp_news_set_title_from_taxonomy(&$form, &$form_state) {
+  $values = $form_state['values'];
+
+  // Get correct language code.
+  if (isset($form_state['entity_translation']['form_langcode'])) {
+    $language = $form_state['entity_translation']['form_langcode'];
+  }
+  else {
+    $language = LANGUAGE_NONE;
+  }
+
+  $some_page_title = '';
+  if (isset($values['field_clientx_related_some_page'][LANGUAGE_NONE][0]['target_id'])) {
+    $some_page = node_load($values['field_clientx_related_some_page'][LANGUAGE_NONE][0]['target_id']);
+    if (isset($some_page->title_field[$language][0]['safe_value'])) {
+      $some_page_title = ' - ' . $some_page->title_field[$language][0]['safe_value'];
+    }
+  }
+
+  if (isset($values['field_clientx_comp_news_titl'][LANGUAGE_NONE][0]['target_id'])) {
+    $term = taxonomy_term_load($values['field_clientx_comp_news_titl'][LANGUAGE_NONE][0]['target_id']);
+    $comp_news_title = i18n_taxonomy_term_name($term, $language) . $some_page_title;
+    $form_state['values']['title_field'][$language][0]['value'] = $comp_news_title;
+  }
+}
+
+/**
+ * Helper function.
+ *
+ * Build automatic translation for comp news.
+ *
+ * @param object $node
+ *   A node object.
+ *
+ * @return object
+ *   A node object.
+ */
+function _clientx_offers_comp_news_add_token_to_stdmsg($node) {
+  $node->field_clientx_standard_message[LANGUAGE_NONE][0]['value'] = '';
+  for ($i = 0; $i < count($node->field_clientx_standard_text[LANGUAGE_NONE]); $i++) {
+    $node->field_clientx_standard_message[LANGUAGE_NONE][0]['value'] .= '[node:field-clientx-standard-text:' . $i . ':field_clientx_text]';
+  }
+  $node->field_clientx_standard_message[LANGUAGE_NONE][0]['format'] = 'full_html';
+  return $node;
+}
+
+/**
+ * Helper function.
+ *
+ * Force sync some buttons in 24 languages use EN as a source.
+ *
+ * @param object $node
+ *   A node object.
+ *
+ * @return object
+ *   A node object.
+ */
+function _clientx_offers_force_sync_some_buttons($node) {
+  $translation_handler = entity_translation_get_handler('node', $node);
+  $translations = $translation_handler->getTranslations();
+  foreach ($translations->data as $langcode => $translation) {
+    $node->field_clientx_some_buttons[$langcode] = $node->field_clientx_some_buttons['en'];
+  }
+  return $node;
+}

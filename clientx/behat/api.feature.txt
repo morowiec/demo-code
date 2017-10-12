@@ -1,0 +1,42 @@
+@api
+Feature: FAQs API
+  In order to ensure the webiste is alive (minimally functional)
+  As a normal user
+  I want to make sure that important features of the FAQ are available
+
+  Scenario: Anonymous user can see a FAQ main page
+    Given "categories" terms:
+    | name         |
+    | Category one |
+    | Category two |
+    When I am on "help"
+    Then I should see the text "FAQs"
+    And I should see "Category one"
+    And I should see "Category two"
+    #And show last response
+
+  Scenario: Anonymous user can see a FAQ category page
+    Given "categories" terms:
+    | name         |
+    | FAQ_category |
+    And "Client | FAQ" content:
+    | title   | status | promoted | path[pathauto] | body        | field_question_ref_categories |
+    | FAQ_1   | 1      | 1        | 1              | FAQ_content | FAQ_category                  |
+    When I am viewing a "categories" term with the name "FAQ_category"
+    Then I should see the text "FAQs"
+    And I should see the heading "FAQ_category"
+
+  Scenario: Anonymous user can see a FAQ page
+    Given I am logged in as a user with the "administrator" role
+    And "categories" terms:
+    | name         |
+    | FAQ_category |
+    Given "Client | FAQ" content:
+    | title   | status | path[pathauto] | body        | field_question_ref_categories |
+    | FAQ_1   | 1      | 1              | FAQ_content | FAQ_category                  |
+    | FAQ_2   | 1      | 1              | FAQ_content | FAQ_category                  |
+    When I go to "admin/content"
+    And I follow "FAQ_1"
+    Then I should see the heading "FAQ_1"
+    Then I should see the text "FAQ_2"
+    And I should see the text "Related FAQs"
