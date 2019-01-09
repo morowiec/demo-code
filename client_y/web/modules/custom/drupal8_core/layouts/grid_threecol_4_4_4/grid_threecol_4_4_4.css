@@ -1,0 +1,36 @@
+/*
+ * @file
+ * Provides the layout styles for layout_threecol_25_50_25.
+ *
+ * @todo Using display: flex requires https://www.drupal.org/node/2842298 to be
+ * in before this can be marked as stable.
+ */
+.layout--grid-threecol-4-4-4 {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.layout--grid-threecol-4-4-4 > .layout__region {
+  flex: 0 1 100%;
+}
+
+@media screen and (min-width: 40em) {
+  .layout--grid-threecol-4-4-4 > .layout__region--first-above {
+    flex: 0 1 33%;
+  }
+  .layout--grid-threecol-4-4-4 > .layout__region--second-above {
+    flex: 0 1 34%;
+  }
+  .layout--grid-threecol-4-4-4 > .layout__region--third-above {
+    flex: 0 1 33%;
+  }
+  .layout--grid-threecol-4-4-4 > .layout__region--first-below {
+    flex: 0 1 33%;
+  }
+  .layout--grid-threecol-4-4-4 > .layout__region--second-below {
+    flex: 0 1 34%;
+  }
+  .layout--grid-threecol-4-4-4 > .layout__region--third-below {
+    flex: 0 1 33%;
+  }
+}

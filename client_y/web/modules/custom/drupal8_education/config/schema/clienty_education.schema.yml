@@ -1,0 +1,12 @@
+# Schema for the configuration files of the Drupal8 v1.0 Education module.
+
+drupal8_education.settings:
+  type: config_object
+  label: 'Drupal8 v1.0 settings'
+  mapping:
+    education_trainings:
+      type: string
+      label: 'Link do strony z listą szkoleń'
+    education_trainings_archived:
+      type: string
+      label: 'Link do strony z listą szkoleń archiwalnych'

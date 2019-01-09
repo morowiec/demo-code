@@ -1,0 +1,40 @@
+twocol_8_4:
+  version: VERSION
+  css:
+    theme:
+      layouts/twocol_8_4/twocol_8_4.css: {}
+twocol_4_8:
+  version: VERSION
+  css:
+    theme:
+      layouts/twocol_4_8/twocol_4_8.css: {}
+threecol_4_4_4:
+  version: VERSION
+  css:
+    theme:
+      layouts/threecol_4_4_4/threecol_4_4_4.css: {}
+grid_threecol_4_4_4:
+  version: VERSION
+  css:
+    theme:
+      layouts/grid_threecol_4_4_4/threecol_4_4_4.css: {}
+onecol:
+  version: VERSION
+  css:
+    theme:
+      layouts/onecol/onecol.css: {}
+twocol:
+  version: VERSION
+  css:
+    theme:
+      layouts/twocol/twocol.css: {}
+
+drupal8_core.state_required:
+  version: VERSION
+  js:
+    js/drupal8_core.state_required.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/jquery.once
+  - core/drupalSettings

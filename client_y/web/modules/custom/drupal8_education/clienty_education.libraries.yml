@@ -1,0 +1,20 @@
+drupal8_education.upcoming_slick:
+  version: VERSION
+  js:
+    js/drupal8_education.upcoming_slick.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/jquery.once
+  - core/drupalSettings
+  - slick/slick
+drupal8_education.faq_slick:
+  version: VERSION
+  js:
+    js/drupal8_education.faq_slick.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/jquery.once
+  - core/drupalSettings
+  - slick/slick

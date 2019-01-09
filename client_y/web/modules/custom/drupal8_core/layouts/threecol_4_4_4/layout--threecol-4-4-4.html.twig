@@ -1,0 +1,68 @@
+{#
+/**
+ * @file
+ * Default theme implementation for a three column layout.
+ *
+ * This template provides a three column 25%-50%-25% display layout, with
+ * additional areas for the top and the bottom.
+ *
+ * Available variables:
+ * - content: The content for this layout.
+ * - attributes: HTML attributes for the layout <div>.
+ *
+ * @ingroup themeable
+ */
+#}
+{% set classes = [
+  'layout',
+  'layout--threecol-4-4-4',
+  'container',
+  'p-0',
+  settings.wrapped == FALSE ? "bg-" ~ settings.color
+] %}
+
+{% if settings.tablet == 'three-rows' %}
+  {% set first_bootstrap_grid = ['col-md-4'] %}
+  {% set second_bootstrap_grid = ['col-md-4'] %}
+  {% set third_bootstrap_grid = ['col-md-4'] %}
+{% else %}
+  {% set first_bootstrap_grid = ['col-md-12', 'col-lg-4'] %}
+  {% set second_bootstrap_grid = ['col-md-12', 'col-lg-4'] %}
+  {% set third_bootstrap_grid = ['col-md-12', 'col-lg-4'] %}
+{% endif %}
+
+{% if content %}
+  {% if settings.wrapped %}
+    <div class="bg-{{ settings.color }}">
+  {% endif %}
+  <div{{ attributes.addClass(classes) }}>
+    {% if content.top %}
+      <div {{ region_attributes.top.addClass('layout__region', 'layout__region--top', 'col-md-12', 'p-0') }}>
+        {{ content.top }}
+      </div>
+    {% endif %}
+
+    <div class="row p-0 m-0">
+      {% if content.first %}
+        <div {{ region_attributes.first.addClass(first_bootstrap_grid|merge(['layout__region', 'layout__region--first', 'p-0'])) }} >
+          {{ content.first }}
+        </div>
+      {% endif %}
+
+      {% if content.second %}
+        <div {{ region_attributes.second.addClass(second_bootstrap_grid|merge(['layout__region', 'layout__region--second', 'p-0'])) }} >
+          {{ content.second }}
+        </div>
+      {% endif %}
+
+      {% if content.third %}
+        <div {{ region_attributes.third.addClass(third_bootstrap_grid|merge(['layout__region', 'layout__region--third', 'p-0'])) }} >
+          {{ content.third }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% if settings.wrapped %}
+    </div>
+  {% endif %}
+{% endif %}

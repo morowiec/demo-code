@@ -1,0 +1,84 @@
+{#
+/**
+ * @file
+ * Default theme implementation for a three column layout.
+ *
+ * This template provides a three column 25%-50%-25% display layout, with
+ * additional areas for the top and the bottom.
+ *
+ * Available variables:
+ * - content: The content for this layout.
+ * - attributes: HTML attributes for the layout <div>.
+ *
+ * @ingroup themeable
+ */
+#}
+{% set classes = [
+  'layout',
+  'layout--grid-threecol-4-4-4',
+  'container',
+  'p-0',
+  settings.wrapped == FALSE ? "bg-" ~ settings.color
+] %}
+{% if settings.tablet == 'two-one-col' %}
+  {% set first_bootstrap_grid = ['col-sm-6', 'col-lg-4'] %}
+  {% set second_bootstrap_grid = ['col-sm-6', 'col-lg-4'] %}
+  {% set third_bootstrap_grid = ['col-sm-12', 'col-lg-4'] %}
+{% elseif settings.tablet == 'three-row' %}
+  {% set first_bootstrap_grid = ['col-sm-12', 'col-lg-4'] %}
+  {% set second_bootstrap_grid = ['col-sm-12', 'col-lg-4'] %}
+  {% set third_bootstrap_grid = ['col-sm-12', 'col-lg-4'] %}
+{% else  %}
+  {% set first_bootstrap_grid = ['col-md-4'] %}
+  {% set second_bootstrap_grid = ['col-md-4'] %}
+  {% set third_bootstrap_grid = ['col-md-4'] %}
+{% endif %}
+{% if content %}
+  {% if settings.wrapped %}
+<div class="bg-{{ settings.color }}">
+  {% endif %}
+  <div{{ attributes.addClass(classes) }}>
+
+    <div class="row p-0 m-0">
+      {% if content.first_above %}
+        <div {{ region_attributes.first_above.addClass(first_bootstrap_grid|merge(['layout__region', 'layout__region--first-above', 'p-0'])) }}>
+          {{ content.first_above }}
+        </div>
+      {% endif %}
+
+      {% if content.second_above %}
+        <div {{ region_attributes.second_above.addClass(second_bootstrap_grid|merge(['layout__region', 'layout__region--second-above', 'p-0'])) }}>
+          {{ content.second_above }}
+        </div>
+      {% endif %}
+
+      {% if content.third_above %}
+        <div {{ region_attributes.third_above.addClass(third_bootstrap_grid|merge(['layout__region', 'layout__region--third-above', 'p-0'])) }}>
+          {{ content.third_above }}
+        </div>
+      {% endif %}
+    </div>
+    <div class="row p-0 m-0">
+      {% if content.first_below %}
+        <div {{ region_attributes.first_below.addClass(first_bootstrap_grid|merge(['layout__region', 'layout__region--first-below', 'p-0'])) }}>
+          {{ content.first_below }}
+        </div>
+      {% endif %}
+
+      {% if content.second_below %}
+        <div {{ region_attributes.second_below.addClass(second_bootstrap_grid|merge(['layout__region', 'layout__region--second-below', 'p-0'])) }}>
+          {{ content.second_below }}
+        </div>
+      {% endif %}
+
+      {% if content.third_below %}
+        <div {{ region_attributes.third_below.addClass(third_bootstrap_grid|merge(['layout__region', 'layout__region--third-below', 'p-0'])) }}>
+          {{ content.third_below }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% if settings.wrapped %}
+    </div>
+  {% endif %}
+{% endif %}

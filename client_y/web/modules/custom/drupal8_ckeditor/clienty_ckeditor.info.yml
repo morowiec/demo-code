@@ -1,0 +1,10 @@
+name: Drupal8 v1.0 CKEditor
+type: module
+description: Add a new features to CKEditor in Drupal 8
+package: Drupal8 v1.0
+dependencies:
+  - ckeditor
+
+core: 8.x
+version: '8.x-1.0-alpha1'
+

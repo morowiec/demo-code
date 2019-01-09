@@ -1,0 +1,39 @@
+name: Drupal8 v1.0 Core
+description: Core functionalities for Drupal8 v1.0 website.
+package: Drupal8 v1.0
+type: module
+core: 8.x
+version: '8.x-1.0-alpha1'
+configure: drupal8_core.admin_settings
+
+dependencies:
+- admin_toolbar
+- admin_toolbar_tools
+- block
+- block_content
+- config
+- ckeditor
+- ctools
+- datetime
+- datetime_range
+- editor
+- field
+- field_ui
+- image
+- like_and_dislike
+- link
+- maxlength
+- menu_block
+- menu_ui
+- node
+- path
+- pathauto
+- responsive_image
+- taxonomy
+- text
+- token
+- token_filter
+- user
+- views
+- views_ui
+- votingapi

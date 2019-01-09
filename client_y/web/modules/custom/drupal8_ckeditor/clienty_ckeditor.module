@@ -1,0 +1,33 @@
+<?php
+
+/**
+ * @file
+ * Contains drupal8_ckeditor.module.
+ */
+
+use Drupal\editor\Entity\Editor;
+
+/**
+ * Implements hook_ckeditor_css_alter().
+ */
+function drupal8_ckeditor_ckeditor_css_alter(array &$css, Editor $editor) {
+  if (!$editor->hasAssociatedFilterFormat()) {
+    return;
+  }
+
+  $path = '/libraries/drupal8_ckeditor/ckeditor.css';
+  if (\Drupal::moduleHandler()->moduleExists('libraries')) {
+    $path = libraries_get_path('drupal8_ckeditor') . '/ckeditor.css';
+  }
+
+  $css[] = $path;
+}
+
+/**
+ * Implements hook_editor_js_settings_alter().
+ */
+function drupal8_ckeditor_editor_js_settings_alter(array &$settings) {
+  foreach ($settings['editor']['formats'] as $name => $value) {
+    $settings['editor']['formats'][$name]['editorSettings']['customConfig'] = base_path() . drupal_get_path('module', 'drupal8_ckeditor') . '/js/drupal8_ckeditor_custom_config.js';
+  }
+}

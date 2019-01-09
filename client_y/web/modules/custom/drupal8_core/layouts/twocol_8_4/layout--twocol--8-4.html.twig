@@ -1,0 +1,52 @@
+{#
+/**
+ * @file
+ * Default theme implementation to display a two-column layout.
+ *
+ * Available variables:
+ * - content: The content for this layout.
+ * - attributes: HTML attributes for the layout <div>.
+ *
+ * @ingroup themeable
+ */
+#}
+{% set classes = [
+  'layout',
+  'layout--twocol-8-4',
+  'container',
+  'p-0',
+  settings.wrapped == FALSE ? "bg-" ~ settings.color
+] %}
+
+{% set first_order = 'order-lg-first' %}
+{% set second_order = '' %}
+
+{% if settings.tabletTwoCol == 'last-up' %}
+  {% set second_order = 'order-first' %}
+{% elseif settings.tabletTwoCol == 'last-bottom' %}
+  {% set second_order = 'order-last' %}
+{% endif %}
+
+{% if content %}
+  {% if settings.wrapped %}
+    <div class="bg-{{ settings.color }}">
+  {% endif %}
+  <div{{ attributes.addClass(classes) }}>
+    <div class="row p-0 m-0">
+      {% if content.first %}
+        <div {{ region_attributes.first.addClass('layout__region', 'layout__region--first', 'col-xs-12', 'col-lg-8', 'p-0', first_order) }}>
+          {{ content.first }}
+        </div>
+      {% endif %}
+
+      {% if content.second %}
+        <div {{ region_attributes.second.addClass('layout__region', 'layout__region--second', 'col-xs-12', 'col-lg-4', 'p-0', second_order) }}>
+          {{ content.second }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% if settings.wrapped %}
+    </div>
+  {% endif %}
+{% endif %}

@@ -1,0 +1,23 @@
+name: Drupal8 v1.0 Education
+description: Education functionalities for Drupal8 v1.0 website.
+package: Drupal8 v1.0
+type: module
+core: 8.x
+version: '8.x-1.0-alpha1'
+
+dependencies:
+- drupal8_core
+- datetime
+- field
+- image
+- link
+- maxlength
+- menu_ui
+- menu_force
+- node
+- path
+- taxonomy
+- text
+- user
+- views
+- views_infinite_scroll

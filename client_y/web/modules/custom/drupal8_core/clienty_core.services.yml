@@ -1,0 +1,12 @@
+services:
+  drupal8_core.utilities:
+    class: Drupal\drupal8_core\Utilities
+    arguments: ['@config.factory', '@current_route_match']
+  drupal8_core.twig_extension:
+    class: Drupal\drupal8_core\drupal8CoreTwigExtension
+    tags:
+      - { name: twig.extension }
+  remove_response_headers:
+    class: Drupal\drupal8_core\EventSubscriber\RemoveResponseHeaders
+    tags:
+      - { name: event_subscriber }

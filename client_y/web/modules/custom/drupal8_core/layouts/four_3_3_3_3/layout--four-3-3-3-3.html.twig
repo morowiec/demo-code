@@ -1,0 +1,66 @@
+{#
+/**
+ * @file
+ * Default theme implementation for a three column layout.
+ *
+ * This template provides a three column 25%-50%-25% display layout, with
+ * additional areas for the top and the bottom.
+ *
+ * Available variables:
+ * - content: The content for this layout.
+ * - attributes: HTML attributes for the layout <div>.
+ *
+ * @ingroup themeable
+ */
+#}
+{% set classes = [
+  'layout',
+  'layout--four-3-3-3-3',
+  'container',
+  'p-0',
+  settings.wrapped == FALSE ? "bg-" ~ settings.color
+] %}
+
+{% if settings.tabletFourCol == 'one-row' %}
+  {% set layout_four_tablet = ['col-sm-3'] %}
+{% elseif settings.tabletFourCol == 'two-row' %}
+  {% set layout_four_tablet = ['col-sm-6', 'col-lg-3'] %}
+{% else %}
+  {% set layout_four_tablet = ['col-sm-12', 'col-lg-3'] %}
+{% endif %}
+
+{% if content %}
+  {% if settings.wrapped %}
+    <div class="bg-{{ settings.color }}">
+  {% endif %}
+  <div{{ attributes.addClass(classes) }}>
+    <div class="row p-0 m-0">
+      {% if content.first %}
+        <div {{ region_attributes.first.addClass(layout_four_tablet|merge(['layout__region', 'layout__region--first', 'p-0'])) }}>
+          {{ content.first }}
+        </div>
+      {% endif %}
+
+      {% if content.second %}
+        <div {{ region_attributes.second.addClass(layout_four_tablet|merge(['layout__region', 'layout__region--second', 'p-0'])) }}>
+          {{ content.second }}
+        </div>
+      {% endif %}
+
+      {% if content.third %}
+        <div {{ region_attributes.third.addClass(layout_four_tablet|merge(['layout__region', 'layout__region--third', 'p-0'])) }}>
+          {{ content.third }}
+        </div>
+      {% endif %}
+
+      {% if content.fourth %}
+        <div {{ region_attributes.fourth.addClass(layout_four_tablet|merge(['layout__region', 'layout__region--fourth', 'p-0'])) }}>
+          {{ content.fourth }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% if settings.wrapped %}
+    </div>
+  {% endif %}
+{% endif %}

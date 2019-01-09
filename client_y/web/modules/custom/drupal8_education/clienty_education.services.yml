@@ -1,0 +1,4 @@
+services:
+  drupal8_education.education_utilities:
+    class: Drupal\drupal8_education\EducationUtilities
+    arguments: ['@config.factory', '@menu.link_tree']

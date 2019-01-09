@@ -1,0 +1,21 @@
+diff --git a/js/like_and_dislike_service.js b/js/like_and_dislike_service.js
+index 144bff6..5438fda 100755
+--- a/js/like_and_dislike_service.js
++++ b/js/like_and_dislike_service.js
+@@ -17,6 +17,7 @@
+           // of likes, dislikes is the new number of dislikes, message_type is
+           // the type of message to display ("status" or "warning") and message
+           // is the message to display.
++          var total = response['likes'] + response['dislikes'];
+           ['like', 'dislike'].forEach(function (iconType) {
+             var selector = '#' + iconType + '-container-' + entity_type + '-' + entity_id;
+             var $aTag = $(selector + ' a');
+@@ -24,7 +25,7 @@
+               return;
+             }
+             response.operation[iconType] ? $aTag.addClass('voted') : $aTag.removeClass('voted');
+-            $(selector + ' .count').text(response[iconType + 's']);
++            $(selector + ' .count').text(Math.round(((response[iconType + 's'] / total) * 100)) + '%');
+           });
+
+           // Display a message whether the vote was registered or an error

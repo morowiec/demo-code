@@ -1,0 +1,29 @@
+# Codeception Test Suite Configuration
+#
+# Suite for acceptance tests.
+# Perform tests in browser using the WebDriver or PhpBrowser.
+# If you need both WebDriver and PHPBrowser tests - create a separate suite.
+
+actor: AcceptanceTester
+
+env:
+  test:
+    modules:
+      enabled:
+      - PhpBrowser:
+          url: http://t-d8.30.drupal8.pl
+      - \Helper\Acceptance
+
+  demo:
+    modules:
+      enabled:
+      - PhpBrowser:
+          url: http://d-d8.30.drupal8.pl
+      - \Helper\Acceptance
+
+  local:
+    modules:
+      enabled:
+      - PhpBrowser:
+          url: http://drupal:8080
+      - \Helper\Acceptance

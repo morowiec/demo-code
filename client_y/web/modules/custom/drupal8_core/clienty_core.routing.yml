@@ -1,0 +1,7 @@
+drupal8_core.admin_settings:
+  path: '/admin/config/drupal8_core'
+  defaults:
+    _form: '\Drupal\drupal8_core\Form\drupal8CoreConfigurationForm'
+    _title: 'Configuration'
+  requirements:
+    _permission: 'administer site configuration'

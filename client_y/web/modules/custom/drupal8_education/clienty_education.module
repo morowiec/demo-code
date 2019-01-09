@@ -1,0 +1,265 @@
+<?php
+
+/**
+ * @file
+ * Legacy Webprofiler module file.
+ *
+ * @package Drupal\drupal8_core
+ */
+
+use Drupal\Core\Block\BlockPluginInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Views\ViewExecutable;
+
+// Load custom_token.tokens.inc from custom_token module.
+module_load_include('inc', 'drupal8_education', 'drupal8_education .tokens');
+
+/**
+ * Implements hook_theme().
+ */
+function drupal8_education_theme() {
+  return [
+    'drupal8_prev_next_lessons' => [
+      'variables' => [
+        'links' => NULL,
+        'labels' => NULL,
+      ],
+      'template' => 'block--content-prev-next-lessons',
+    ],
+    'drupal8_counter_lessons' => [
+      'variables' => [
+        'current' => NULL,
+        'total' => NULL,
+      ],
+      'template' => 'block--counter-lessons',
+    ],
+    'drupal8_top_rated_articles' => [
+      'variables' => [
+        'content' => NULL,
+        'buttons' => [],
+      ],
+      'template' => 'block--top-rated-articles',
+    ],
+    'drupal8_education_links' => [
+      'variables' => [
+        'content' => NULL,
+        'headers' => [],
+        'links' => [],
+      ],
+      'template' => 'block--links',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function drupal8_education_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'node_drupal8_education_trainings_form' || $form_id == 'node_drupal8_education_trainings_edit_form') {
+    $terms = \Drupal::entityTypeManager()
+      ->getStorage('taxonomy_term')
+      ->loadByProperties([
+        'vid' => 'drupal8_education_training_type',
+        'name' => 'Online',
+      ]);
+    $online = reset($terms);
+    $terms = \Drupal::entityTypeManager()
+      ->getStorage('taxonomy_term')
+      ->loadByProperties([
+        'vid' => 'drupal8_education_training_type',
+        'name' => 'Stacjonarne',
+      ]);
+    $stationary = reset($terms);
+    $form['field_drupal8_edu_location']['#states'] = [
+      'disabled' => [
+        ':input[name="field_drupal8_edu_training_type"]' => ['value' => $online->id()],
+      ],
+      'required' => [
+        ':input[name="field_drupal8_edu_training_type"]' => ['value' => $stationary->id()],
+      ],
+    ];
+    $form['#attached']['library'][] = 'core/drupal.states';
+    $form['#attached']['library'][] = 'drupal8_core/drupal8_core.state_required';
+
+    $form['#validate'][] = '_drupal8_education_form_node_drupal8_education_trainings_form_validate';
+  }
+}
+
+/**
+ * Implements hook_entity_presave().
+ */
+function drupal8_education_entity_presave(EntityInterface $entity) {
+  switch ($entity->bundle()) {
+    case 'drupal8_education_trainings':
+      $terms = \Drupal::entityTypeManager()
+        ->getStorage('taxonomy_term')
+        ->loadByProperties([
+          'vid' => 'drupal8_education_training_type',
+          'name' => 'Online',
+        ]);
+      $online_training_type = reset($terms);
+      $locations = \Drupal::entityTypeManager()
+        ->getStorage('taxonomy_term')
+        ->loadByProperties([
+          'vid' => 'drupal8_education_locations',
+          'name' => 'Online',
+        ]);
+      $online_location = reset($locations);
+      $training_type = $entity->get('field_drupal8_edu_training_type')->getString();
+      if ($online_training_type->id() == $training_type) {
+        $entity->set('field_drupal8_edu_location', $online_location->id());
+      }
+      break;
+  }
+}
+
+/**
+ * Implements hook_views_pre_view().
+ */
+function drupal8_education_views_pre_view(ViewExecutable $view, $display_id, array &$args) {
+  if ($view->id() !== 'drupal8_education_trainings') {
+    return;
+  }
+
+  switch ($display_id) {
+    case 'block_current':
+      $options = [
+        'id' => 'area_text_custom',
+        'table' => 'views',
+        'field' => 'area_text_custom',
+        'relationship' => 'none',
+        'group_type' => 'none',
+        'admin_label' => '',
+        'empty' => TRUE,
+        'tokenize' => FALSE,
+        'content' => \Drupal::service('drupal8_education.education_utilities')
+          ->getLink('training-archived'),
+        'plugin_id' => 'text_custom',
+      ];
+      $view->setHandler('block_current', 'header', 'area_text_custom', $options);
+      break;
+
+    case 'block_archived':
+      $options = [
+        'id' => 'area_text_custom',
+        'table' => 'views',
+        'field' => 'area_text_custom',
+        'relationship' => 'none',
+        'group_type' => 'none',
+        'admin_label' => '',
+        'empty' => TRUE,
+        'tokenize' => FALSE,
+        'content' => \Drupal::service('drupal8_education.education_utilities')
+          ->getLink('training-current'),
+        'plugin_id' => 'text_custom',
+      ];
+      $view->setHandler('block_archived', 'header', 'area_text_custom', $options);
+      break;
+
+    case 'block_upcoming':
+      $options = [
+        'id' => 'area_text_custom',
+        'table' => 'views',
+        'field' => 'area_text_custom',
+        'relationship' => 'none',
+        'group_type' => 'none',
+        'admin_label' => '',
+        'empty' => TRUE,
+        'tokenize' => FALSE,
+        'content' => \Drupal::service('drupal8_education.education_utilities')
+          ->getLink('training-upcoming'),
+        'plugin_id' => 'text_custom',
+      ];
+      $view->setHandler('block_upcoming', 'header', 'area_text_custom', $options);
+      break;
+  }
+}
+
+/**
+ * Implements hook_block_view_alter().
+ */
+function drupal8_education_block_view_alter(array &$build, BlockPluginInterface $block) {
+  if ($build['#id'] === 'drupal8_education_lessons_block_menu') {
+    _drupal8_education_lessons_block_menu($build);
+  }
+
+  if ($build['#id'] === 'drupal8_education_articles_block_menu') {
+    _drupal8_education_articles_block_menu($build);
+  }
+}
+
+/**
+ * Validates submission values in the FORM_ID() form.
+ */
+function _drupal8_education_form_node_drupal8_education_trainings_form_validate(array &$form, FormStateInterface $form_state) {
+  if ($form_state->hasValue('field_drupal8_edu_training_type') && $form_state->hasValue('field_drupal8_edu_location')) {
+    $terms = \Drupal::entityTypeManager()
+      ->getStorage('taxonomy_term')
+      ->loadByProperties([
+        'vid' => 'drupal8_education_training_type',
+        'name' => 'Stacjonarne',
+      ]);
+    $stationary = reset($terms);
+
+    $training_type = $form_state->getValue('field_drupal8_edu_training_type');
+    $location = $form_state->getValue('field_drupal8_edu_location');
+
+    if ($stationary->id() == $training_type[0]['target_id'] && empty($location[0]['target_id'])) {
+      $form_state->setErrorByName('field_drupal8_edu_location', t('%name field is required.', ['%name' => t('Lokalizacja')]));
+    }
+
+  }
+}
+
+/**
+ * Update block title for lessons menu based on parent element.
+ */
+function _drupal8_education_lessons_block_menu(array &$build) {
+  // Update block title for lessons menu based on parent element.
+  $menu_link_manager = \Drupal::service('plugin.manager.menu.link');
+  $link = \Drupal::service('menu.active_trail')->getActiveLink('main');
+
+  if ($link->getParent() && $parent = $menu_link_manager->createInstance($link->getParent())) {
+    $build['#configuration']['label'] = $parent->getTitle();
+  }
+}
+
+/**
+ * Loop through each item checking for active menu trail.
+ */
+function _drupal8_education_articles_block_menu(array &$build) {
+  $menu_tree = \Drupal::menuTree();
+  // Build the typical default set of menu tree parameters.
+  $parameters = $menu_tree->getCurrentRouteMenuTreeParameters('main');
+  $parameters->setMinDepth(2);
+  // Load the tree based on this set of parameters.
+  $tree = $menu_tree->load('main', $parameters);
+  if (empty($tree)) {
+    return;
+  }
+
+  // Build out the renderable array.
+  $menu = $menu_tree->build($tree);
+  if (empty($menu['#items'])) {
+    return;
+  }
+
+  // Loop through each item checking for active menu trail.
+  foreach ($menu['#items'] as $item) {
+    if ($item['in_active_trail']) {
+      // If this item is in the active menu trail, set the block label to the
+      // menu title. Currently assuming there will only be one.
+      $build['#configuration']['label'] = $item['title'];
+      continue;
+    }
+  }
+  $current_path = \Drupal::service('path.current')->getPath();
+  $path = \Drupal::service('path.alias_manager')->getAliasByPath($current_path);
+  $path = urldecode($path);
+  $path_elements = explode('/', $path);
+  if ($path_elements[1] == 'edukacja' && $path_elements[2] == 'kursy') {
+    $build['#configuration']['label'] = t('Kursy');
+  }
+
+}

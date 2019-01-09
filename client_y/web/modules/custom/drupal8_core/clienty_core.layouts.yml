@@ -1,0 +1,185 @@
+layout_drupal8_onecol:
+  label: 'One column 12'
+  path: layouts/onecol
+  template: layout--onecol
+  library: drupal8_core/onecol
+  class: '\Drupal\drupal8_core\Layout\BasicConfigurationLayoutClass'
+  category: 'Columns: 1'
+  default_region: content
+  icon_map:
+    - [content]
+  regions:
+    content:
+      label: Content
+
+layout_drupal8_twocol:
+  label: 'Two column 6/6'
+  path: layouts/twocol
+  template: layout--twocol
+  class: '\Drupal\drupal8_core\Layout\BasicConfigurationLayoutClass'
+  library: drupal8_core/twocol
+  category: 'Columns: 2'
+  default_region: first
+  icon_map:
+    - [top]
+    - [first, second]
+    - [bottom]
+  regions:
+    top:
+      label: Top
+    first:
+      label: First
+    second:
+      label: Second
+    bottom:
+      label: Bottom
+
+layout_twocol_8_4:
+  label: 'Two column 8/4'
+  path: layouts/twocol_8_4
+  template: layout--twocol--8-4
+  class: '\Drupal\drupal8_core\Layout\TabletTwoColConfigurationLayoutClass'
+  library: drupal8_core/twocol_8_4
+  category: 'Columns: 2'
+  default_region: first
+  icon_map:
+  - [first, first, second]
+  regions:
+    first:
+      label: First
+    second:
+      label: Second
+
+layout_twocol_4_8:
+  label: 'Two column 4/8'
+  path: layouts/twocol_4_8
+  template: layout--twocol--4-8
+  class: '\Drupal\drupal8_core\Layout\BasicConfigurationLayoutClass'
+  library: drupal8_core/twocol_4_8
+  category: 'Columns: 2'
+  default_region: first
+  icon_map:
+    - [first, second, second]
+  regions:
+    first:
+      label: First
+    second:
+      label: Second
+
+layout_twocol_5_7:
+  label: 'Two column 5/7'
+  path: layouts/twocol_5_7
+  template: layout--twocol--5-7
+  class: '\Drupal\drupal8_core\Layout\BasicConfigurationLayoutClass'
+  category: 'Columns: 2'
+  default_region: first
+  icon_map:
+    - [first, first, first, first, first, second, second, second, second, second, second, second]
+  regions:
+    first:
+      label: First
+    second:
+      label: Second
+
+layout_grid_tools_block:
+  label: 'Grid for Tools block'
+  path: layouts/grid_tools_block
+  template: layout--grid--tools-block
+  class: '\Drupal\drupal8_core\Layout\GridToolsBlockConfigurationLayoutClass'
+  library: drupal8_core/grid_tools_block
+  category: 'Grid'
+  default_region: first
+  icon_map:
+    - [first, second, second]
+    - [third, fourth,]
+    - [fifth]
+  regions:
+    first:
+      label: First
+    second:
+      label: Second
+    third:
+      label: Third
+    fourth:
+      label: Fourth
+    fifth:
+      label: Fifth
+
+layout_threecol_4_4_4:
+  label: 'Tree column 4/4/4'
+  path: layouts/threecol_4_4_4
+  template: layout--threecol-4-4-4
+  class: '\Drupal\drupal8_core\Layout\TabletThreeColConfigurationLayoutClass'
+  library: drupal8_core/threecol_4_4_4
+  category: 'Columns: 3'
+  default_region: first
+  icon_map:
+    - [top]
+    - [first, second, third]
+  regions:
+    top:
+      label: Top
+    first:
+      label: First
+    second:
+      label: Second
+    third:
+      label: Third
+
+layout_grid_threecol_4_4_4:
+  label: 'Grid tree column 4/4/4'
+  path: layouts/grid_threecol_4_4_4
+  template: layout--grid-threecol-4-4-4
+  class: '\Drupal\drupal8_core\Layout\TabletConfigurationLayoutClass'
+  library: drupal8_core/grid_threecol_4_4_4
+  category: 'Columns: 3'
+  default_region: first
+  icon_map:
+    - [first_above, second_above, third_above]
+    - [first_below, second_below, third_below]
+  regions:
+    first_above:
+      label: First above
+    second_above:
+      label: Second above
+    third_above:
+      label: Third above
+    first_below:
+      label: First below
+    second_below:
+      label: Second below
+    third_below:
+      label: Third below
+
+layout_four_3_3_3_3:
+  label: 'Four column 3/3/3/3'
+  path: layouts/four_3_3_3_3
+  template: layout--four-3-3-3-3
+  class: '\Drupal\drupal8_core\Layout\TabletFourColConfigurationLayoutClass'
+  library: drupal8_core/four_3_3_3_3
+  category: 'Columns: 4'
+  default_region: first
+  icon_map:
+    - [first, second, third, fourth]
+  regions:
+    first:
+      label: First
+    second:
+      label: Second
+    third:
+      label: Third
+    fourth:
+      label: Fourth
+
+layout_overflow_horizontal:
+  label: 'Overflow - horizontal'
+  path: layouts/overflow_horizontal
+  template: layout--overflow-horizontal
+  class: '\Drupal\drupal8_core\Layout\OverflowHorizontalConfigurationLayoutClass'
+  category: 'Overflow'
+  default_region: content
+  icon_map:
+    - [content]
+  regions:
+    content:
+      label: Content
